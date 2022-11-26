@@ -60,7 +60,12 @@ const handleOutside = (evt) => {
 const handleEscKeydown = (evt) => {
   if (isEscapeKey(evt)) {
     evt.preventDefault();
-    hideModal();
+    const messageElement = document.querySelector('.success') || document.querySelector('.error');
+    if (messageElement) {
+      hideModal(messageElement);
+    } else {
+      closeOverlayModal();
+    }
   }
 };
 
@@ -89,17 +94,16 @@ const showErrorMessage = (text) => {
 
 // скрыть модальное окно
 
-function hideModal() {
-  const messageElement = document.querySelector('.success') || document.querySelector('.error');
+function hideModal(messageModal = null) {
+  const messageElement = messageModal || document.querySelector('.success') || document.querySelector('.error');
   messageElement.remove();
-  document.removeEventListener('keydown', handleEscKeydown);
   document.removeEventListener('click', handleOutside);
   document.body.style.overflow = 'auto';
 }
 
 // при изменении поля загрузки открыть окно редактирования
 
-uploadInput.addEventListener('change', (openOverlayModal));
+uploadInput.addEventListener('change', openOverlayModal);
 
 // при фокусе с клавиатуры открыть окно редактирования
 
@@ -115,14 +119,14 @@ function openOverlayModal() {
   uploadOverlay.classList.remove('hidden');
   body.classList.add('modal-open');
   document.addEventListener('keydown', handleEscKeydown);
-  uploadOverlayCancel.addEventListener('click', (closeOverlayModal));
+  uploadOverlayCancel.addEventListener('click', closeOverlayModal);
 }
 
 function closeOverlayModal() {
   uploadOverlay.classList.add('hidden');
   body.classList.remove('modal-open');
   document.removeEventListener('keydown', handleEscKeydown);
-  uploadOverlayCancel.removeEventListener('click', (closeOverlayModal));
+  uploadOverlayCancel.removeEventListener('click', closeOverlayModal);
   uploadForm.reset();
   imgUploadPreview.removeAttribute('class');
   resetScale();
@@ -141,31 +145,28 @@ const unblockSubmitButton = () => {
   submitButton.textContent = 'Опубликовать';
 };
 
-const onUserFormSubmit = (onSuccess) => {
-  uploadForm.addEventListener('submit', (evt) => {
-    evt.preventDefault();
-    const isValid = pristine.validate();
-    if (isValid) {
-      blockSubmitButton();
-      sendData(
-        () => {
-          onSuccess();
-          unblockSubmitButton();
-          showSuccessMessage();
-        },
-        (text) => {
-          showErrorMessage(text);
-          unblockSubmitButton();
-        },
-        new FormData(evt.target),
-      );
-    }
-  });
-};
+uploadForm.addEventListener('submit', (evt) => {
+  evt.preventDefault();
+  const isValid = pristine.validate();
+  if (isValid) {
+    blockSubmitButton();
+    sendData(
+      () => {
+        closeOverlayModal();
+        unblockSubmitButton();
+        showSuccessMessage();
+      },
+      (text) => {
+        showErrorMessage(text);
+        unblockSubmitButton();
+      },
+      new FormData(evt.target),
+    );
+  }
+});
 
 export {
   closeOverlayModal,
   showSuccessMessage,
-  showErrorMessage,
-  onUserFormSubmit
+  showErrorMessage
 };
